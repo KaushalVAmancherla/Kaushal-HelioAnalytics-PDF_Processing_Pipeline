@@ -101,9 +101,9 @@ if __name__ == "__main__":
             #print("FILE_NAME -> ", file_name)
 
             extracted_text = extract_text_from_pdf(file_name)
-
+            
             create_outputs_path = "./create_outputs.py"
-            subprocess.run(["python", create_outputs_path, *extracted_text])
+            subprocess.run(["python", create_outputs_path, *extracted_text)
 
             #print(len(extracted_text))
 

@@ -58,6 +58,9 @@ gpt4_similarity_dict = defaultdict(set)
 gpt4_prefinal_set = set()
 gpt4_final_set = set()
 
+num_ents = 0
+num_triples = 0
+
 def contains_pronouns_stopwords(extracted_text):
     doc = nlp(extracted_text)    
 
@@ -360,8 +363,8 @@ def filter_entities(gpt_entities_path,gpt_final_list_entity):
 
     #print(gpt_entities_path,"\n")
     write_entities_to_file(gpt_entities_path,gpt_final_list_entity)
-
-    #return final_entity_list
+    
+    return len(gpt_final_list_entity)
 
 def create_final_set(prefinal_set,final_set,final_list_entity):
     #print(prefinal_set,"\n\n\n")
@@ -400,6 +403,8 @@ def filter_outputs_gpt4():
 
     delete_output_file(gpt4_outputs_processed_path)
 
+    return len(gpt4_final_set)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process PDF Text List")
     parser.add_argument("pdf_text_list", nargs="+", help="List of extracted text from the PDF")
@@ -407,11 +412,16 @@ if __name__ == "__main__":
 
     extracted_text = args.pdf_text_list
 
+    #print(extracted_text)
+
     #print("REACHED")
     delete_output_file(gpt4_entities_path)
     delete_output_file(gpt4_outputs_path)
 
     process_extracted_text_gpt(extracted_text,model_gpt4,gpt4_entities_path,gpt4_outputs_path)
     
-    filter_entities(gpt4_entities_path,gpt4_final_list_entity)
-    filter_outputs_gpt4()
+    num_entities = filter_entities(gpt4_entities_path,gpt4_final_list_entity)
+    num_outputs = filter_outputs_gpt4()
+
+    print(num_entities, "entities saved to", gpt4_entities_path)
+    print(num_outputs, "semantic triple(s) saved to", gpt4_outputs_path)   

@@ -1,0 +1,7 @@
+('Global Pedersen conductance', 'is studied in', 'coupled MHD simulations without and with kinetic turbulence conductance')
+('Meso-scale', 'covers', 'a myriad processes and phenomena, including poleward-moving auroral forms (PMAFs)')
+('Meso-scale precipitation', 'has a substantial contribution', '25-50% to the overall precipitation')
+('Instantaneous small-scale Pedersen conductance distribution', 'is derived from', 'narrow FOV imaging')
+('Large-scale statistical precipitating electron energy flux distribution', 'is derived from', 'OVATION-SM')
+('Small-scale features', 'have net effects on', 'large-scale dynamics')
+('Ionosphere density', 'is studied through', 'kinetic simulation')
