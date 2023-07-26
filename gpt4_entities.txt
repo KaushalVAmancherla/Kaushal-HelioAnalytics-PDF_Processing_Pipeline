@@ -1,8 +1,0 @@
-Meso-scale
-Small-scale features
-Meso-scale precipitation
-Large-scale statistical precipitating electron energy flux distribution
-Instantaneous small-scale Pedersen conductance distribution
-Ionosphere density
-Global Pedersen conductance
-Plasma redistribution
