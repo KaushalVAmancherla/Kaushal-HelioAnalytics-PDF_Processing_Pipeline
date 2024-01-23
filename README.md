@@ -1,4 +1,4 @@
-# Kaushal-HelioAnalytics-PDF_Processing_Pipeline
+# Kaushal-HelioAnalytics-Summer_Internship
 Extract entities and semantic triples on a Heliophysics based text (in PDF format) 
 
 1. Create a .env file in the directory and declare/initalize variable OPENAI_API_KEY to your openai api key
@@ -7,4 +7,4 @@ Extract entities and semantic triples on a Heliophysics based text (in PDF forma
 
 3. Run the pipeline by the command: python process_pdf_py (insert the pdf directory path here)
 
-4. The outputs will be stored in two files: gpt4_entities.txt, gpt4_outputs.txt
+4. The model outputs will be stored in two files: gpt4_entities.txt, gpt4_outputs.txt and all graphical outputs will be stored in the folder named graphical_outputs
