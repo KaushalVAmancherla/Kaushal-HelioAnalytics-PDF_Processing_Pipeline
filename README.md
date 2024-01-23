@@ -1,7 +1,7 @@
 # Kaushal-HelioAnalytics-Summer_Internship
 Extract entities and semantic triples on a Heliophysics based text (in PDF format) 
 
-1. Create a .env file in the directory and declare/initalize variable OPENAI_API_KEY to your openai api key
+1. Add your open ai api key in the .env file
 
 2. Install the requirements.txt file to ensure all dependencies are covered for
 
