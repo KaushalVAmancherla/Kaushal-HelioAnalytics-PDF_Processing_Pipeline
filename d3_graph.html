@@ -1,0 +1,315 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <!-- Load d3.js -->
+    <script src="https://d3js.org/d3.v6.js"></script>
+
+    <style>
+        .sidebar {
+            position: absolute;
+            width: 200px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 5px #aaa;
+            display: none; 
+        }
+    </style>
+</head>
+<body>
+
+<div id="my_dataviz"></div>
+
+<div id="sidebar" class="sidebar"></div>
+
+<script>
+    console.log("TEST")
+    var graph = {}
+
+    fetch('final_json_data.json')
+        .then(response => response.json())
+        .then(data => {
+            graph = data;
+            processDataAndVisualize(graph);
+        })
+        .catch(error => console.error('Error fetching data:', error));
+
+    // You can still have other code here, outside the fetch block
+    console.log("Code outside fetch block");
+
+    function processDataAndVisualize(data) {
+        console.log("GRAPH DATA:", data);
+
+        var width = 1500;
+        var height = 1500;
+
+        // append the svg object to the body of the page
+        var svg = d3.select("#my_dataviz")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .call(d3.zoom().on("zoom", zoomed))
+            .append("g");
+
+        // Create a marker for the arrowhead
+        svg.append("defs").append("marker")
+            .attr("id", "arrowhead")
+            .attr("refX", 6)
+            .attr("refY", 3)
+            .attr("markerWidth", 8)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto-start-reverse")
+            .append("path")
+            .attr("d", "M 0 0 L 6 3 L 0 6 Z");
+            
+        // Set up simulation
+        const simulation = d3.forceSimulation()
+            .force('charge', d3.forceManyBody().strength(-20))
+            .force('center', d3.forceCenter(width / 2, height / 2))
+
+        simulation.nodes(data.nodes).on('tick', updateElements);
+        simulation.force('link', d3.forceLink(data.links).id(d => d.id).distance(150)).on('tick', updateElements);
+
+        // Create links (lines) with arrowheads and text labels
+        const linkElements = svg.selectAll('g.link')
+            .data(data.links)
+            .enter().append('g')
+            .attr('class', 'link');
+
+        linkElements.append('line')
+            .attr('stroke', 'black')
+            .attr('marker-end', 'url(#arrowhead)'); // Add arrowhead marker
+
+        // Add text label to the links
+        linkElements.append('text')
+            .text(d => d.label)
+            .attr('font-size', 12)
+            .attr('dy', -5)
+            .attr('text-anchor', 'middle')
+            .attr('fill', 'black');
+
+        // Create nodes
+        const nodeElements = svg.selectAll('g.node')
+            .data(data.nodes)
+            .enter().append('g')
+            .attr('class', 'node')
+            .on('click', clicked) // Add click event handler to each node
+            .call(d3.drag()  // Enable dragging for nodes
+                .on('start', dragstarted)
+                .on('drag', dragged)
+                .on('end', dragended));
+
+        nodeElements.append('circle')
+            .attr('r', d => d.size)
+            .attr('fill', d => (d.group === 1 ? 'red' : 'gray'));
+
+        // Add text label to the nodes
+        nodeElements.append('text')
+            .text(d => d.id)
+            .attr('font-size', 15)
+            .attr('dy', '.3em') // Adjust vertical alignment
+            .attr('text-anchor', 'start') // Align text to the start (left) of the text element
+            .attr('fill', 'black') // Set text color
+            .attr('x', d => d.size + 5) // Adjust the distance to the right of the node
+            .style('font-weight', d => (d.group === 1 ? 'bold' : 'normal')) // Bold if group is 1
+            .style('font-style', d => (d.group === 2 ? 'italic' : 'normal')); // Italic if group is 2
+
+        function updateElements() {
+            // Update link positions
+            linkElements.selectAll('line')
+                .attr('x1', d => d.source.x)
+                .attr('y1', d => d.source.y)
+                .attr('x2', d => {
+                    const dx = d.target.x - d.source.x;
+                    const dy = d.target.y - d.source.y;
+                    const length = Math.sqrt(dx * dx + dy * dy);
+                    const scale = (length - d.target.size) / length;
+                    return d.source.x + dx * scale;
+                })
+                .attr('y2', d => {
+                    const dx = d.target.x - d.source.x;
+                    const dy = d.target.y - d.source.y;
+                    const length = Math.sqrt(dx * dx + dy * dy);
+                    const scale = (length - d.target.size) / length;
+                    return d.source.y + dy * scale;
+                });
+
+            // Update text label positions for links
+            linkElements.selectAll('text')
+                .attr('x', d => (d.source.x + d.target.x) / 2)
+                .attr('y', d => (d.source.y + d.target.y) / 2);
+
+            // Update node positions
+            nodeElements.selectAll('circle')
+                .attr('cx', d => d.x)
+                .attr('cy', d => d.y);
+
+            // Update text label positions for nodes
+            nodeElements.selectAll('text')
+                .attr('transform', d => `translate(${d.x},${d.y})`);
+        }
+
+        let clickedNode = null;
+
+// Pre-calculate indirect linkages
+// Pre-calculate indirect linkages
+const indirectLinks = [];
+data.links.forEach(link => {
+    if (link.source.group === 1 && link.target.group === 1) {
+        indirectLinks.push({ source: link.source.id, target: link.target.id });
+    }
+});
+
+function clicked(event, d) {
+    const sidebar = d3.select('#sidebar');
+
+    // Check if the sidebar is visible for the clicked node
+    const isSidebarVisible = sidebar.style('display') === 'block';
+
+    // If the sidebar is not visible, show it for the clicked node
+    if (!isSidebarVisible) {
+        // Hide the sidebar if it's already visible for another node
+        d3.selectAll('.sidebar').style('display', 'none');
+
+        // Remove all temporary blue links
+        svg.selectAll('.indirect-link').remove();
+
+        // Store the clicked node
+        clickedNode = d;
+
+        // Find both incoming and outgoing connections to Group 2 nodes
+        const group2Connections = data.links.filter(link => (link.source.id === d.id || link.target.id === d.id) && link.target.group === 2);
+
+        // Find the connected Group 2 nodes
+        const connectedGroup2Nodes = group2Connections.map(link => (link.source.id === d.id ? link.target : link.source));
+
+        // Find the common Group 2 nodes for indirect connections
+        const commonGroup2Nodes = group2Connections.map(link => (link.source.id === d.id ? link.target : link.source).id);
+
+        // Find indirect connections to the common Group 2 nodes
+        const indirectGroup2Connections = data.links
+            .filter(link => link.source.group === 1 && link.target.group === 2 && commonGroup2Nodes.includes(link.target.id) && link.source.id !== d.id)
+            .map(link => data.nodes.find(node => node.id === link.source.id));
+
+        // Display information about direct and indirect connections to Group 2 nodes
+        let connectionInfo = `Direct connections to/from Group 2 nodes:<br>`;
+        group2Connections.forEach((connection, index) => {
+            const connectedGroup1Node = connection.source.id === d.id ? connection.target : connection.source;
+            connectionInfo += `${index + 1}. ${connectedGroup1Node.id}<br>`;
+        });
+
+        if (indirectGroup2Connections.length > 0) {
+            connectionInfo += `<br>Indirect connections to Group 2 nodes:<br>`;
+            indirectGroup2Connections.forEach((indirectConnection, index) => {
+                connectionInfo += `${index + 1}. ${indirectConnection.id}<br>`;
+
+                // Add temporary link between Group 1 nodes for indirect connection
+                svg.append('line')
+                    .attr('class', 'indirect-link')
+                    .attr('x1', d.x)
+                    .attr('y1', d.y)
+                    .attr('x2', indirectConnection.x)
+                    .attr('y2', indirectConnection.y)
+                    .attr('stroke', 'blue')  // Set the color to blue
+                    .attr('stroke-width', 2)
+                    .attr('marker-end', 'url(#arrowhead)');
+                // Add green lines between all nodes in indirectGroup2Connections
+                indirectGroup2Connections.forEach(node => {
+                    if (node.id !== indirectConnection.id) {
+                        svg.append('line')
+                            .attr('class', 'indirect-link')
+                            .attr('x1', indirectConnection.x)
+                            .attr('y1', indirectConnection.y)
+                            .attr('x2', node.x)
+                            .attr('y2', node.y)
+                            .attr('stroke', 'green')  // Set the color to green
+                            .attr('stroke-width', 2);
+                    }
+                });
+            });
+        }
+
+        // Set sidebar content with placeholderText and group2ConnectionsCount
+        sidebar.html(`<strong>${d.id}</strong><br>${d.placeholderText || ''}<br>${connectionInfo}`);
+
+        // Calculate the position for the sidebar next to the clicked node
+        const sidebarX = d.x + d.size + 5; // Adjust as needed
+        const sidebarY = d.y - 5; // Adjust as needed
+
+        // Position and show the sidebar
+        sidebar.style('left', `${sidebarX}px`)
+            .style('top', `${sidebarY}px`)
+            .style('display', 'block');
+
+        // Highlight the clicked node and its connections
+        highlightNodeAndConnections(clickedNode, connectedGroup2Nodes, indirectGroup2Connections);
+    } else {
+        // If another node is clicked while the sidebar is open, hide the sidebar and reset the graph
+        d3.selectAll('.sidebar').style('display', 'none');
+
+        // Remove all temporary blue and green links
+        svg.selectAll('.indirect-link').remove();
+
+        resetGraph();
+    }
+}
+
+
+
+        // Function to highlight the clicked node and its connections
+        function highlightNodeAndConnections(clickedNode, connectedGroup2Nodes, indirectGroup2Connections) {
+            // Fade out all nodes and links
+            nodeElements.selectAll('circle, text').style('opacity', 0.2);
+            linkElements.selectAll('line, text').style('opacity', 0.2);
+
+            // Highlight the clicked node and its connections
+            nodeElements.filter(d => d.id === clickedNode.id).selectAll('circle, text').style('opacity', 1);
+            nodeElements.filter(node => connectedGroup2Nodes.includes(node)).selectAll('circle, text').style('opacity', 1);
+            nodeElements.filter(node => indirectGroup2Connections.includes(node)).selectAll('circle, text').style('opacity', 1);
+            linkElements.filter(link => link.source.id === clickedNode.id || link.target.id === clickedNode.id).selectAll('line, text').style('opacity', 1);
+        }
+
+        // Function to reset the graph to its normal state
+        function resetGraph() {
+            // Reset the opacity for all nodes and links
+            nodeElements.selectAll('circle, text').style('opacity', 1);
+            linkElements.selectAll('line, text').style('opacity', 1);
+        }
+
+
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        function zoomed(event) {
+            svg.attr("transform", event.transform);
+
+            // Update sidebar position on zoom
+            const sidebar = d3.select('#sidebar');
+            if (clickedNode) {
+                const sidebarX = clickedNode.x + clickedNode.size + 30; // Adjust as needed
+                const sidebarY = clickedNode.y - 30; // Adjust as needed
+                sidebar.style('left', `${sidebarX}px`)
+                    .style('top', `${sidebarY}px`);
+            }
+        }
+    }
+</script>
+
+</body>
+</html>

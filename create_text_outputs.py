@@ -38,9 +38,14 @@ yamz_file_path_ont = "./yamz/uploads/helio"
 
 gdc_report_path = './GDC_STDT_Report_FINAL.pdf'
 
-
+"""
 gpt4_entities_path = "gpt4_entities.txt"
 gpt4_outputs_path = "gpt4_outputs.txt"
+"""
+
+gpt4_entities_path = ""
+gpt4_outputs_path = ""
+
 gpt4_outputs_processed_path = "gpt4_outputs_processed.txt"
 
 gpt4_graph_entities_path = "gpt4_graph_entities.txt"
@@ -57,7 +62,7 @@ gpt4_graph_outputs_path = "gpt4_graph_outputs_GDC.txt"
 stop_words_getter = lambda token: token.is_stop or token.lemma_ in STOP_WORDS
 Token.set_extension('is_stop', getter=stop_words_getter)
 
-nlp = spacy.load("en_core_web_sm")
+nlp = spacy.load("en_core_web_md")
 nlp.add_pipe("entityLinker", last=True)
 
 system_msg = "You are a language model that performs relation extraction on a heliophysics publication to extract semantic triples."
@@ -734,11 +739,23 @@ def get_relations(entity,file_path):
     return relations_set
 
 if __name__ == "__main__":
+    print("REACHED SECOND VIEW")
+
     parser = argparse.ArgumentParser(description="Process PDF Text List")
+    
     parser.add_argument("pdf_text_list", nargs="+", help="List of extracted text from the PDF")
+    parser.add_argument("pdf_entities_path", nargs="+", help="Path to write entities output to")
+    parser.add_argument("pdf_outputs_path", nargs="+", help="Path to write semantic triples to")
+
     args = parser.parse_args()
 
     extracted_text = args.pdf_text_list
+
+    gpt4_entities_path = args.pdf_entities_path[0]
+    gpt4_outputs_path = args.pdf_outputs_path[0]
+
+    print(gpt4_entities_path)
+    print(gpt4_outputs_path)
 
     #print(extracted_text)
 
@@ -754,6 +771,7 @@ if __name__ == "__main__":
     print(num_entities, "entities saved to", gpt4_entities_path)
     print(num_outputs, "semantic triple(s) saved to", gpt4_outputs_path)   
 
+    """
     create_graph_text_outputs(gpt4_outputs_path)
 
     filtered_entities_set = filter_output_pronouns(gpt4_graph_entities_path)
@@ -769,9 +787,10 @@ if __name__ == "__main__":
 
     #delete_output_file(gpt4_entities_path)
     #delete_output_file(gpt4_outputs_path)
-
+    
     if not filtered_entities_dict:
         raise Exception("Dictionary is empty, cannot proceed to the next script")
-
-    create_outputs_path = "./create_graph_outputs.py"
-    subprocess.run(["python", create_outputs_path,str(filtered_entities_dict)])
+    """
+    
+    #create_outputs_path = "./create_graph_outputs.py"
+    #subprocess.run(["python", create_outputs_path,str(filtered_entities_dict)])
